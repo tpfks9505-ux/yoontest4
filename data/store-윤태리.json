@@ -1,0 +1,14 @@
+{
+  "holdings": [
+    {
+      "id": "mrbb3kv0",
+      "code": "005930",
+      "name": "삼성전자",
+      "qty": 1,
+      "buyPrice": 11,
+      "buyDate": "2026-07-07"
+    }
+  ],
+  "watchlist": {},
+  "fxRecords": []
+}
