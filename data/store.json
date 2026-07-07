@@ -1,5 +1,14 @@
 {
   "holdings": [],
   "watchlist": {},
-  "fxRecords": []
+  "fxRecords": [
+    {
+      "id": "mramz664",
+      "currency": "USD",
+      "foreignAmount": 11,
+      "rate": 11,
+      "krwAmount": 121,
+      "date": "2026-07-07"
+    }
+  ]
 }
