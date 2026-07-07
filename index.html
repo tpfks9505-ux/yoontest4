@@ -116,6 +116,27 @@
   .divider-label::after{content:"";flex:1;height:1px;background:var(--line);}
 
   .watchlist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .wics-group{margin-bottom:20px;}
+  .wics-group-title{font-size:11.5px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .wics-count{font-size:10.5px;color:var(--text-dim);background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-weight:500;text-transform:none;letter-spacing:0;}
+  .wics-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+
+  .group-row.has-lots .name-cell{cursor:pointer;}
+  .expand-caret{display:inline-block;width:14px;color:var(--amber);font-size:11px;}
+  .lot-subrow td{background:var(--panel-2);}
+  .lot-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .lot-table th{font-size:10.5px;color:var(--text-dim);font-weight:500;padding:8px 14px;text-align:right;border-bottom:1px solid var(--line);}
+  .lot-table th:first-child{text-align:left;}
+  .lot-table td{padding:7px 14px;text-align:right;border-bottom:1px solid rgba(36,49,76,.5);}
+  .lot-table td:first-child{text-align:left;color:var(--text-dim);}
+  .lot-table tr:last-child td{border-bottom:none;}
+
+  .profile-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;}
+  .profile-row input[type="text"], .profile-row input[type="password"]{background:#0A1120;border:1px solid #24314C;border-radius:6px;padding:8px 9px;color:#E7ECF5;font-size:12.5px;font-family:'Roboto Mono',monospace;}
+  .profile-row .profile-name{width:110px;flex-shrink:0;}
+  .profile-row .profile-token{flex:1;min-width:0;}
+  .profile-row .profile-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:2px 6px;}
+  .profile-row .profile-del:hover{color:var(--down);}
   .wl-card{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .15s;}
   .wl-card:hover{border-color:var(--amber);}
   .wl-card.active{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber) inset;}
@@ -162,18 +183,15 @@
 </div>
 
 <div id="settingsOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:none;align-items:center;justify-content:center;">
-  <div style="background:#121B2E;border:1px solid #24314C;border-radius:10px;padding:22px;max-width:420px;width:90%;font-family:'Noto Sans KR',sans-serif;">
+  <div style="background:#121B2E;border:1px solid #24314C;border-radius:10px;padding:22px;max-width:520px;width:92%;font-family:'Noto Sans KR',sans-serif;max-height:85vh;overflow-y:auto;">
     <div style="font-size:15px;font-weight:700;color:#E7ECF5;margin-bottom:8px;">여러 기기 동기화 설정</div>
     <div style="font-size:12.5px;color:#8592AD;line-height:1.6;margin-bottom:14px;">
-      GitHub Fine-grained 개인 액세스 토큰을 이 브라우저에만 저장합니다. 소스 코드에는 저장되지 않으므로 커밋해도 노출되지 않습니다. 다른 기기에서도 동기화하려면 그 기기에서도 각각 한 번씩 입력해주세요.
+      프로필별로 완전히 독립된 저장 공간을 씁니다. 같은 프로필 이름을 쓰고, 같은 저장소에 쓸 수 있는 토큰을 입력한 기기끼리만 데이터가 공유됩니다(다른 프로필 데이터는 서로 섞이지 않습니다). 토큰은 이 브라우저의 localStorage에만 저장되고 소스 코드/커밋에는 남지 않습니다. 왼쪽 라디오로 이 기기에서 사용할 프로필을 선택하세요.
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
-      <label style="font-size:11px;color:#8592AD;">GitHub Personal Access Token (Fine-grained, Contents: Read/Write)</label>
-      <input type="password" id="settingsTokenInput" autocomplete="off" placeholder="github_pat_..." style="background:#0A1120;border:1px solid #24314C;border-radius:6px;padding:9px 10px;color:#E7ECF5;font-size:13px;font-family:'Roboto Mono',monospace;">
-    </div>
+    <div id="profileList"></div>
+    <button type="button" class="btn btn-ghost btn-sm" id="addProfileBtn" style="margin-bottom:12px;">+ 프로필 추가</button>
     <div id="settingsMsg" style="font-size:12px;color:#ff9d9d;min-height:16px;margin-bottom:8px;"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button type="button" class="btn btn-ghost btn-sm" id="settingsClearBtn">토큰 삭제</button>
       <button type="button" class="btn btn-ghost btn-sm" id="settingsCancelBtn">취소</button>
       <button type="button" class="btn btn-amber btn-sm" id="settingsSaveBtn">저장</button>
     </div>
@@ -216,6 +234,7 @@
           </div>
           <div class="field"><label>수량</label><input type="number" id="qtyInput" min="0" step="1" placeholder="10"></div>
           <div class="field"><label>매입가(원)</label><input type="number" id="priceInput" min="0" step="1" placeholder="70000"></div>
+          <div class="field"><label>구매일</label><input type="date" id="buyDateInput"></div>
           <button type="button" class="btn btn-amber" id="addBtn">+ 추가</button>
         </div>
         <div id="addMsg"></div>
@@ -265,11 +284,11 @@
         <div class="rank-cols">
           <div>
             <div class="divider-label">KOSPI</div>
-            <div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>종목명</th><th>현재가</th><th></th></tr></thead><tbody id="rankKospiBody"></tbody></table></div>
+            <div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>종목명</th><th>현재가</th><th>전일비</th><th>등락률</th><th></th></tr></thead><tbody id="rankKospiBody"></tbody></table></div>
           </div>
           <div>
             <div class="divider-label">KOSDAQ</div>
-            <div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>종목명</th><th>현재가</th><th></th></tr></thead><tbody id="rankKosdaqBody"></tbody></table></div>
+            <div style="overflow-x:auto;"><table><thead><tr><th>#</th><th>종목명</th><th>현재가</th><th>전일비</th><th>등락률</th><th></th></tr></thead><tbody id="rankKosdaqBody"></tbody></table></div>
           </div>
         </div>
       </div>
@@ -353,34 +372,79 @@
     pwInput.focus();
   })();
 
-  // ---------------- 동기화 설정 (GitHub 토큰, 이 브라우저 전용) ----------------
+  // ---------------- 동기화 설정 (GitHub 토큰 프로필, 이 브라우저 전용) ----------------
   (function initSettingsModal(){
     const overlay = document.getElementById('settingsOverlay');
     const openBtn = document.getElementById('settingsBtn');
-    const input = document.getElementById('settingsTokenInput');
+    const listEl = document.getElementById('profileList');
+    const addBtn = document.getElementById('addProfileBtn');
     const msg = document.getElementById('settingsMsg');
     const saveBtn = document.getElementById('settingsSaveBtn');
     const cancelBtn = document.getElementById('settingsCancelBtn');
-    const clearBtn = document.getElementById('settingsClearBtn');
+    let working = []; // {id, name, token, active}
+
+    function renderRows(){
+      if(working.length === 0){
+        listEl.innerHTML = `<div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">아직 프로필이 없습니다. "+ 프로필 추가"를 눌러 만드세요.</div>`;
+        return;
+      }
+      listEl.innerHTML = working.map(p => `
+        <div class="profile-row" data-id="${p.id}">
+          <input type="radio" name="activeProfileRadio" value="${p.id}" ${p.active?'checked':''}>
+          <input type="text" class="profile-name" placeholder="프로필 이름 (예: 내폰)" value="${p.name.replace(/"/g,'&quot;')}">
+          <input type="password" class="profile-token" autocomplete="off" placeholder="github_pat_..." value="${p.token.replace(/"/g,'&quot;')}">
+          <button type="button" class="profile-del" title="삭제">✕</button>
+        </div>`).join('');
+      listEl.querySelectorAll('.profile-row').forEach(row => {
+        const id = row.dataset.id;
+        row.querySelector('input[type=radio]').addEventListener('change', () => {
+          working.forEach(p => p.active = (p.id === id));
+        });
+        row.querySelector('.profile-name').addEventListener('input', (e) => {
+          const p = working.find(x=>x.id===id); if(p) p.name = e.target.value;
+        });
+        row.querySelector('.profile-token').addEventListener('input', (e) => {
+          const p = working.find(x=>x.id===id); if(p) p.token = e.target.value;
+        });
+        row.querySelector('.profile-del').addEventListener('click', () => {
+          working = working.filter(x => x.id !== id);
+          if(working.length && !working.some(p=>p.active)) working[0].active = true;
+          renderRows();
+        });
+      });
+    }
+
     function open(){
-      input.value = '';
+      working = getProfiles().map(p => ({ ...p, active: p.id === getActiveProfileId() }));
       msg.textContent = '';
+      renderRows();
       overlay.style.display = 'flex';
-      input.focus();
     }
     function close(){ overlay.style.display = 'none'; }
     openBtn.addEventListener('click', open);
     cancelBtn.addEventListener('click', close);
     overlay.addEventListener('click', e => { if(e.target === overlay) close(); });
-    saveBtn.addEventListener('click', () => {
-      const val = input.value.trim();
-      if(!val){ msg.textContent = '토큰을 입력해주세요.'; return; }
-      setGithubToken(val);
-      close();
-      location.reload();
+    addBtn.addEventListener('click', () => {
+      const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+      working.push({ id, name: '', token: '', active: working.length === 0 });
+      renderRows();
     });
-    clearBtn.addEventListener('click', () => {
-      setGithubToken('');
+    saveBtn.addEventListener('click', () => {
+      const cleaned = working.filter(p => p.token.trim());
+      if(cleaned.length === 0){
+        // 전부 비워둔 경우 = 동기화 사용 안 함(이 브라우저에만 저장)으로 저장
+        saveProfiles([]); setActiveProfileId('');
+        close(); location.reload();
+        return;
+      }
+      for(const p of cleaned){
+        if(!p.name.trim()){ msg.textContent = '모든 프로필에 이름을 입력해주세요.'; return; }
+      }
+      const names = cleaned.map(p=>p.name.trim());
+      if(new Set(names).size !== names.length){ msg.textContent = '프로필 이름은 서로 달라야 합니다.'; return; }
+      let active = cleaned.find(p=>p.active) || cleaned[0];
+      saveProfiles(cleaned.map(p => ({ id:p.id, name:p.name.trim(), token:p.token.trim() })));
+      setActiveProfileId(active.id);
       close();
       location.reload();
     });
@@ -395,30 +459,58 @@
 
   // 저장소 정보는 코드에 남아있어도 안전합니다 (비밀 아님). 계정명/저장소명일 뿐입니다.
   const GITHUB_OWNER = 'tpfks9505-ux';      // GitHub 계정명
-  const GITHUB_REPO = 'yoontest4';          // 저장소 이름
+  const GITHUB_REPO = 'yoontest2';          // 저장소 이름
   const GITHUB_BRANCH = 'main';             // 브랜치명 (보통 main)
-  const GITHUB_DATA_PATH = 'data/store.json';
 
   // 토큰은 절대 여기(소스 코드)에 직접 넣지 마세요. Secret scanning에 걸리고, 커밋되면
   // 공개 저장소에서는 누구나 볼 수 있습니다. 대신 헤더의 "⚙ 동기화 설정" 버튼으로
   // 각 브라우저의 localStorage에만 저장합니다 (이 기기 전용, 커밋되지 않음).
-  const GITHUB_TOKEN_KEY = 'stockManagerGithubToken_v1';
-  function getGithubToken(){
-    try{ return localStorage.getItem(GITHUB_TOKEN_KEY) || ''; }catch(e){ return ''; }
+  // 프로필별로 서로 다른 파일(data/store-프로필이름.json)에 저장되어 완전히 분리됩니다.
+  const PROFILES_KEY = 'stockManagerGithubProfiles_v1';
+  const ACTIVE_PROFILE_KEY = 'stockManagerActiveProfileId_v1';
+
+  function getProfiles(){
+    try{ const raw = localStorage.getItem(PROFILES_KEY); const list = raw ? JSON.parse(raw) : []; return Array.isArray(list) ? list : []; }
+    catch(e){ return []; }
   }
-  function setGithubToken(token){
-    try{
-      if(token){ localStorage.setItem(GITHUB_TOKEN_KEY, token); }
-      else{ localStorage.removeItem(GITHUB_TOKEN_KEY); }
-    }catch(e){}
+  function saveProfiles(list){
+    try{ localStorage.setItem(PROFILES_KEY, JSON.stringify(list)); }catch(e){}
+  }
+  function getActiveProfileId(){
+    try{ return localStorage.getItem(ACTIVE_PROFILE_KEY) || ''; }catch(e){ return ''; }
+  }
+  function setActiveProfileId(id){
+    try{ if(id) localStorage.setItem(ACTIVE_PROFILE_KEY, id); else localStorage.removeItem(ACTIVE_PROFILE_KEY); }catch(e){}
+  }
+  function getActiveProfile(){
+    const id = getActiveProfileId();
+    if(!id) return null;
+    return getProfiles().find(p => p.id === id) || null;
+  }
+  function getGithubToken(){
+    const p = getActiveProfile();
+    return p ? p.token : '';
+  }
+  function slugifyProfileName(s){
+    return String(s||'').trim().toLowerCase()
+      .replace(/[^a-z0-9가-힣\-_]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'default';
+  }
+  function getDataPath(){
+    const p = getActiveProfile();
+    return `data/store-${slugifyProfileName(p ? (p.name || p.id) : 'default')}.json`;
   }
 
-  const LOCAL_CACHE_KEY = 'stockManagerState_v1';
+  const LOCAL_CACHE_PREFIX = 'stockManagerState_v1';
+  function localCacheKey(){
+    const p = getActiveProfile();
+    return p ? `${LOCAL_CACHE_PREFIX}:${p.id}` : LOCAL_CACHE_PREFIX;
+  }
   function readLocalCache(){
-    try{ const raw = localStorage.getItem(LOCAL_CACHE_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+    try{ const raw = localStorage.getItem(localCacheKey()); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
   }
   function writeLocalCache(state){
-    try{ localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(state)); }catch(e){}
+    try{ localStorage.setItem(localCacheKey(), JSON.stringify(state)); }catch(e){}
   }
 
   // 한글이 포함된 JSON을 안전하게 base64 인코딩/디코딩하기 위한 유틸
@@ -453,7 +545,7 @@
     if(githubToken){
       try{
         const resp = await fetch(
-          `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_DATA_PATH}?ref=${GITHUB_BRANCH}`,
+          `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${getDataPath()}?ref=${GITHUB_BRANCH}`,
           { headers:{ 'Accept':'application/vnd.github+json', 'Authorization':`Bearer ${githubToken}` } }
         );
         if(resp.status === 404){
@@ -522,7 +614,7 @@
         };
         if(githubFileSha) body.sha = githubFileSha;
         const resp = await fetch(
-          `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_DATA_PATH}`,
+          `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${getDataPath()}`,
           {
             method:'PUT',
             headers:{ 'Accept':'application/vnd.github+json', 'Authorization':`Bearer ${githubTokenForSave}`, 'Content-Type':'application/json' },
@@ -549,19 +641,23 @@
   let fxRecords = [];
   let quoteCache = {};
   let activeSymbol = null;
+  let expandedGroups = new Set(); // 동일 종목 여러 건 보유 시 펼침 상태 (세션 중 메모리에만 유지)
 
   // ---------------- network ----------------
-  // 프록시들을 순서대로 하나씩 시도(실패 시 다음 것 대기)하면 최대 4번 타임아웃을 다 채워야 해서 느려짐.
+  // 프록시들을 순서대로 하나씩 시도(실패 시 다음 것 대기)하면 최대 타임아웃을 다 채워야 해서 느려짐.
   // 대신 전부 동시에 요청을 보내고 "가장 먼저 성공하는 응답"만 사용(Promise.any)해서 체감 속도를 크게 줄임.
+  // 프록시를 여러 개 더 추가해 하나둘이 막혀도(403 등) 다른 것이 성공할 확률을 높임.
   const PROXIES = [
-    { build: u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, unwrap: t => t },
-    { build: u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`, unwrap: t => t },
-    { build: u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, unwrap: t => t },
-    { build: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, unwrap: t => { try{ return JSON.parse(t).contents; }catch(e){ return t; } } },
+    { build: u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, unwrap: t => t, raw: true },
+    { build: u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`, unwrap: t => t, raw: true },
+    { build: u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`, unwrap: t => t, raw: true },
+    { build: u => `https://thingproxy.freeboard.io/fetch/${u}`, unwrap: t => t, raw: true },
+    { build: u => `https://api.cors.lol/?url=${encodeURIComponent(u)}`, unwrap: t => t, raw: true },
+    { build: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, unwrap: t => { try{ return JSON.parse(t).contents; }catch(e){ return t; } }, raw: false },
   ];
-  // 바이트 단위(인코딩 보존)로 받아야 하는 경우엔 JSON으로 다시 감싸는 마지막 프록시는 제외
+  // 바이트 단위(인코딩 보존)로 받아야 하는 경우엔 JSON으로 다시 감싸는 프록시는 제외
   // (그 프록시는 원문을 자기 서버에서 이미 문자열로 재해석하므로 EUC-KR 등 원본 인코딩이 깨질 수 있음)
-  const BYTE_PROXIES = PROXIES.slice(0, 3);
+  const BYTE_PROXIES = PROXIES.filter(p => p.raw);
 
   async function raceProxies(url, proxies, timeoutMs, run){
     const attempts = proxies.map(proxy => (async () => {
@@ -805,7 +901,7 @@
       addMsg.innerHTML = `<div class="msg error">일치하는 종목을 찾지 못했습니다. 다른 이름으로 시도해보세요.</div>`; return;
     }
 
-    const newHolding = { id: Date.now().toString(36), code: target.code, name: target.name, qty, buyPrice };
+    const newHolding = { id: Date.now().toString(36), code: target.code, name: target.name, qty, buyPrice, buyDate: document.getElementById('buyDateInput').value || new Date().toISOString().slice(0,10) };
     holdings.push(newHolding);
     await saveState();
     renderHoldings();
@@ -816,7 +912,7 @@
 
     renderHoldings(); renderSummary(); renderTape();
     searchInput.value=''; pickedSymbol=null;
-    document.getElementById('qtyInput').value=''; document.getElementById('priceInput').value='';
+    document.getElementById('qtyInput').value=''; document.getElementById('priceInput').value=''; document.getElementById('buyDateInput').valueAsDate = new Date();
   });
 
   async function ensurePortfolioQuote(code, force=false){
@@ -825,31 +921,80 @@
     return quoteCache[code];
   }
 
+  function groupHoldingsByCode(){
+    const map = new Map();
+    holdings.forEach(h => {
+      if(!map.has(h.code)) map.set(h.code, []);
+      map.get(h.code).push(h);
+    });
+    return map;
+  }
+
   function renderHoldings(){
     const body = document.getElementById('holdingsBody');
     if(holdings.length === 0){
       body.innerHTML = `<tr class="empty-row"><td colspan="7">아직 등록된 종목이 없습니다. 위에서 종목명을 입력해 추가해보세요.</td></tr>`; return;
     }
-    body.innerHTML = holdings.map(h => {
-      const q = quoteCache[h.code];
+    const groups = groupHoldingsByCode();
+    let html = '';
+    groups.forEach((lots, code) => {
+      const q = quoteCache[code];
       const price = q ? q.price : null;
-      const value = price!=null ? price*h.qty : null;
-      const cost = h.buyPrice*h.qty;
-      const pl = value!=null ? value-cost : null;
-      const ret = value!=null ? ((price-h.buyPrice)/h.buyPrice*100) : null;
-      const cls = ret==null ? 'zero' : (ret>0?'pos':ret<0?'neg':'zero');
-      return `<tr>
-          <td class="name-cell"><b>${escapeHtml(h.name)}</b><span>${escapeHtml(h.code)}</span></td>
-          <td>${fmtNum(h.qty)}</td>
-          <td>${fmtNum(h.buyPrice)}원</td>
-          <td>${price!=null ? fmtNum(price)+'원' : '<span class="zero">-</span>'}</td>
-          <td class="${cls}">${pl!=null ? (pl>=0?'+':'')+fmtNum(pl)+'원' : '-'}</td>
-          <td class="${cls}">${ret!=null ? (ret>=0?'+':'')+ret.toFixed(2)+'%' : '-'}</td>
-          <td><span class="row-del" data-id="${h.id}">삭제</span></td>
+      const totalQty = lots.reduce((s,l) => s + l.qty, 0);
+      const totalCost = lots.reduce((s,l) => s + l.qty * l.buyPrice, 0);
+      const avgBuy = totalQty > 0 ? totalCost / totalQty : 0;
+      const value = price != null ? price * totalQty : null;
+      const pl = value != null ? value - totalCost : null;
+      const ret = (price != null && avgBuy > 0) ? ((price - avgBuy) / avgBuy * 100) : null;
+      const cls = ret == null ? 'zero' : (ret > 0 ? 'pos' : ret < 0 ? 'neg' : 'zero');
+      const multi = lots.length > 1;
+      const expanded = expandedGroups.has(code);
+      const name = lots[0].name;
+
+      html += `<tr class="group-row${multi ? ' has-lots' : ''}" data-code="${escapeHtml(code)}">
+          <td class="name-cell">${multi ? `<span class="expand-caret" data-code="${escapeHtml(code)}">${expanded ? '▾' : '▸'}</span>` : ''}<b>${escapeHtml(name)}</b><span>${escapeHtml(code)}${multi ? ` · ${lots.length}건 보유` : ''}</span></td>
+          <td>${fmtNum(totalQty)}</td>
+          <td>${fmtNum(avgBuy)}원${multi ? '<div style="font-size:10px;color:var(--text-dim);">평균</div>' : ''}</td>
+          <td>${price != null ? fmtNum(price) + '원' : '<span class="zero">-</span>'}</td>
+          <td class="${cls}">${pl != null ? (pl >= 0 ? '+' : '') + fmtNum(pl) + '원' : '-'}</td>
+          <td class="${cls}">${ret != null ? (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%' : '-'}</td>
+          <td>${multi ? '' : `<span class="row-del" data-id="${lots[0].id}">삭제</span>`}</td>
         </tr>`;
-    }).join('');
+
+      if(multi && expanded){
+        const sortedLots = [...lots].sort((a,b) => (a.buyDate||'').localeCompare(b.buyDate||''));
+        html += `<tr class="lot-subrow" data-parent="${escapeHtml(code)}"><td colspan="7" style="padding:0;">
+            <table class="lot-table"><thead><tr><th>구매일</th><th>수량</th><th>매입가</th><th>평가손익</th><th></th></tr></thead><tbody>
+              ${sortedLots.map(l => {
+                const lp = price != null ? (price - l.buyPrice) * l.qty : null;
+                const lcls = lp == null ? 'zero' : (lp > 0 ? 'pos' : lp < 0 ? 'neg' : 'zero');
+                return `<tr>
+                  <td>${escapeHtml(l.buyDate || '-')}</td>
+                  <td>${fmtNum(l.qty)}</td>
+                  <td>${fmtNum(l.buyPrice)}원</td>
+                  <td class="${lcls}">${lp != null ? (lp >= 0 ? '+' : '') + fmtNum(lp) + '원' : '-'}</td>
+                  <td><span class="row-del" data-id="${l.id}">삭제</span></td>
+                </tr>`;
+              }).join('')}
+            </tbody></table>
+          </td></tr>`;
+      }
+    });
+    body.innerHTML = html;
+
+    function toggle(code){
+      if(expandedGroups.has(code)) expandedGroups.delete(code); else expandedGroups.add(code);
+      renderHoldings();
+    }
+    body.querySelectorAll('.expand-caret').forEach(el => {
+      el.addEventListener('click', (e) => { e.stopPropagation(); toggle(el.dataset.code); });
+    });
+    body.querySelectorAll('.group-row.has-lots .name-cell').forEach(el => {
+      el.addEventListener('click', () => toggle(el.closest('tr').dataset.code));
+    });
     body.querySelectorAll('.row-del').forEach(el => {
-      el.addEventListener('click', async () => {
+      el.addEventListener('click', async (e) => {
+        e.stopPropagation();
         holdings = holdings.filter(h => h.id !== el.dataset.id);
         await saveState();
         renderHoldings(); renderSummary(); renderTape();
@@ -880,11 +1025,13 @@
 
   function renderTape(){
     const tape = document.getElementById('tape');
-    if(holdings.length === 0){
+    const codes = [...new Set(holdings.map(h => h.code))];
+    if(codes.length === 0){
       tape.innerHTML = `<span class="tape-item">보유 종목을 추가하면 여기에 시세가 표시됩니다 <span class="dot"></span></span>`.repeat(4); return;
     }
-    const items = holdings.map(h => {
-      const q = quoteCache[h.code];
+    const items = codes.map(code => {
+      const h = holdings.find(x => x.code === code);
+      const q = quoteCache[code];
       const cls = q ? (q.changePct>0?'up':q.changePct<0?'down':'') : '';
       const arrow = q ? (q.changePct>0?'▲':q.changePct<0?'▼':'-') : '';
       return `<span class="tape-item"><b>${escapeHtml(h.name)}</b> ${q&&q.price!=null?fmtNum(q.price):'-'} <span class="chg ${cls}">${q?(arrow+' '+Math.abs(q.changePct).toFixed(2)+'%'):''}</span><span class="dot"></span></span>`;
@@ -895,7 +1042,8 @@
   document.getElementById('refreshAllBtn').addEventListener('click', async () => {
     const btn = document.getElementById('refreshAllBtn');
     btn.disabled = true; btn.textContent = '새로고침 중...';
-    await Promise.all(holdings.map(h => ensurePortfolioQuote(h.code, true).catch(()=>null)));
+    const codes = [...new Set(holdings.map(h => h.code))];
+    await Promise.all(codes.map(code => ensurePortfolioQuote(code, true).catch(()=>null)));
     renderHoldings(); renderSummary(); renderTape();
     btn.disabled = false; btn.textContent = '전체 현재가 새로고침';
   });
@@ -923,17 +1071,26 @@
       msgEl.innerHTML = '';
       lookupInput.value=''; lookupPicked=null;
     }catch(err){
-      msgEl.innerHTML = `<div class="msg error">데이터를 불러오지 못했습니다. 네트워크 상태를 확인하고 다시 시도해주세요.</div>`;
+      msgEl.innerHTML = `<div class="msg error">데이터를 불러오지 못했습니다 (${escapeHtml(String(err && err.message || err))}). 네트워크 상태를 확인하고 다시 시도해주세요.</div>`;
     }
   });
 
   async function fetchAndAccumulate(code, name){
     const existing = watchlist[code];
-    const [realtime, bars, industry] = await Promise.all([
+    const [rtRes, barsRes, indRes] = await Promise.allSettled([
       getRealtime(code),
       getDailyBars(code, 7),
       (existing && existing.industry) ? Promise.resolve(existing.industry) : getIndustry(code)
     ]);
+
+    // 현재가(realtime)는 필수 정보라 실패하면 여기서 중단하되, 업종분류/일별시세는
+    // 하나가 실패해도(네트워크 불안정 등) 나머지 데이터로 정상 저장되도록 함
+    if(rtRes.status !== 'fulfilled'){
+      throw new Error((rtRes.reason && rtRes.reason.message) || '현재가 조회 실패');
+    }
+    const realtime = rtRes.value;
+    const bars = barsRes.status === 'fulfilled' ? barsRes.value : [];
+    const industry = indRes.status === 'fulfilled' ? indRes.value : ((existing && existing.industry) || null);
 
     const entry = existing || { code, days:{} };
     entry.name = name || entry.name || code;
@@ -972,7 +1129,7 @@
       grid.innerHTML = `<div class="wl-empty">조회한 종목이 아직 없습니다. 위에서 종목명을 검색하면 여기에 저장됩니다.</div>`;
       return;
     }
-    grid.innerHTML = codes.map(code => {
+    function cardHtml(code){
       const e = watchlist[code];
       const cls = e.changePct==null?'zero':(e.changePct>0?'pos':e.changePct<0?'neg':'zero');
       const dayArr = sortedDayEntries(e, true);
@@ -987,6 +1144,27 @@
           </div>
           <div class="price">${e.price!=null ? fmtNum(e.price)+'원' : '-'} <span class="chg ${cls}">${e.changePct!=null?((e.changePct>=0?'+':'')+e.changePct.toFixed(2)+'%'):''}</span></div>
           <div class="range">${rangeText}</div>
+        </div>`;
+    }
+
+    // WICS(업종) 분류별로 그룹핑. getIndustry()로 가져온 업종명을 그대로 그룹 키로 사용.
+    const groups = new Map();
+    codes.forEach(code => {
+      const key = watchlist[code].industry || '업종 미분류';
+      if(!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(code);
+    });
+    const sortedKeys = [...groups.keys()].sort((a,b) => {
+      if(a==='업종 미분류') return 1;
+      if(b==='업종 미분류') return -1;
+      return a.localeCompare(b, 'ko');
+    });
+
+    grid.innerHTML = sortedKeys.map(key => {
+      const groupCodes = groups.get(key);
+      return `<div class="wics-group">
+          <div class="wics-group-title">${escapeHtml(key)} <span class="wics-count">${groupCodes.length}</span></div>
+          <div class="wics-cards">${groupCodes.map(cardHtml).join('')}</div>
         </div>`;
     }).join('');
 
@@ -1121,6 +1299,9 @@
       ]);
       const kospi = kospiRes.status === 'fulfilled' ? kospiRes.value : [];
       const kosdaq = kosdaqRes.status === 'fulfilled' ? kosdaqRes.value : [];
+      // 전일비/등락률은 realtime 시세에서 가져와 캐시에 채워둠 (보유 종목과 같은 캐시 재사용)
+      const allCodes = [...kospi, ...kosdaq].map(r => r.code);
+      await Promise.all(allCodes.map(code => ensurePortfolioQuote(code).catch(()=>null)));
       renderRankTable(kospiBody, kospi);
       renderRankTable(kosdaqBody, kosdaq);
       msgEl.innerHTML = (kospi.length===0 && kosdaq.length===0) ? `<div class="msg error">순위 데이터를 불러오지 못했습니다. 잠시 후 새로고침을 눌러 다시 시도해주세요.</div>` : '';
@@ -1129,14 +1310,22 @@
     }
   }
   function renderRankTable(bodyEl, list){
-    if(list.length === 0){ bodyEl.innerHTML = `<tr class="empty-row"><td colspan="4">데이터 없음</td></tr>`; return; }
-    bodyEl.innerHTML = list.map((r,i) => `
+    if(list.length === 0){ bodyEl.innerHTML = `<tr class="empty-row"><td colspan="6">데이터 없음</td></tr>`; return; }
+    bodyEl.innerHTML = list.map((r,i) => {
+      const q = quoteCache[r.code];
+      const chg = q ? q.changeAmt : null;
+      const pct = q ? q.changePct : null;
+      const cls = pct==null ? 'zero' : (pct>0?'pos':pct<0?'neg':'zero');
+      return `
       <tr>
         <td>${i+1}</td>
         <td class="name-cell"><b>${escapeHtml(r.name)}</b><span>${escapeHtml(r.code)}</span></td>
         <td>${fmtNum(r.price)}원</td>
+        <td class="${cls}">${chg!=null ? (chg>=0?'+':'')+fmtNum(chg)+'원' : '-'}</td>
+        <td class="${cls}">${pct!=null ? (pct>=0?'+':'')+pct.toFixed(2)+'%' : '-'}</td>
         <td><span class="rank-add" data-code="${escapeHtml(r.code)}" data-name="${escapeHtml(r.name)}">관심종목 추가</span></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
     bodyEl.querySelectorAll('.rank-add').forEach(el => {
       el.addEventListener('click', async () => {
         el.textContent = '추가 중...';
@@ -1151,6 +1340,7 @@
 
   // ================= FX (환전 기록) =================
   document.getElementById('fxDate').valueAsDate = new Date();
+  document.getElementById('buyDateInput').valueAsDate = new Date();
 
   function fxSummaryByCurrency(){
     const map = {};
@@ -1254,7 +1444,8 @@
     renderHoldings(); renderSummary(); renderTape(); renderWatchlist(); renderFx();
 
     if(holdings.length){
-      await Promise.all(holdings.map(h => ensurePortfolioQuote(h.code).catch(()=>null)));
+      const codes = [...new Set(holdings.map(h => h.code))];
+      await Promise.all(codes.map(code => ensurePortfolioQuote(code).catch(()=>null)));
       renderHoldings(); renderSummary(); renderTape();
     }
   })();
