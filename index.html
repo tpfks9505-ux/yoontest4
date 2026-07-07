@@ -459,7 +459,7 @@
 
   // 저장소 정보는 코드에 남아있어도 안전합니다 (비밀 아님). 계정명/저장소명일 뿐입니다.
   const GITHUB_OWNER = 'tpfks9505-ux';      // GitHub 계정명
-  const GITHUB_REPO = 'yoontest4';          // 저장소 이름
+  const GITHUB_REPO = 'yoontest2';          // 저장소 이름
   const GITHUB_BRANCH = 'main';             // 브랜치명 (보통 main)
 
   // 토큰은 절대 여기(소스 코드)에 직접 넣지 마세요. Secret scanning에 걸리고, 커밋되면
@@ -689,6 +689,32 @@
   async function fetchJSON(url, timeoutMs=7000){
     const text = await fetchRaw(url, timeoutMs);
     return JSON.parse(text);
+  }
+
+  // 무료 CORS 프록시들은 동시 요청 제한이 매우 낮아서, 종목이 여러 개일 때
+  // 한꺼번에 다 요청하면(예: TOP20 랭킹=40종목) 순식간에 429(Too Many Requests)로 막힘.
+  // 동시에 진행되는 종목 조회 개수를 제한하고, 각 요청 사이에 약간의 간격을 둬서
+  // 프록시가 차단되지 않게 함.
+  async function mapWithConcurrency(items, limit, fn, staggerMs=120){
+    const results = new Array(items.length);
+    let idx = 0;
+    async function worker(){
+      while(idx < items.length){
+        const cur = idx++;
+        if(staggerMs) await new Promise(r => setTimeout(r, staggerMs));
+        // 프록시가 일시적으로 429/차단 상태여도 한 번 더 시도해볼 기회를 줌
+        // (짧게 대기 후 재시도, 그래도 실패하면 해당 종목만 조용히 실패 처리)
+        let lastErr = null;
+        for(let attempt=0; attempt<2; attempt++){
+          try{ results[cur] = await fn(items[cur], cur); lastErr = null; break; }
+          catch(e){ lastErr = e; await new Promise(r => setTimeout(r, 500 + attempt*500)); }
+        }
+        if(lastErr) results[cur] = null;
+      }
+    }
+    const workers = Array.from({length: Math.max(1, Math.min(limit, items.length))}, worker);
+    await Promise.all(workers);
+    return results;
   }
   // HTML 페이지를 원본 인코딩(EUC-KR) 그대로 디코딩하기 위해 바이트로 받아옴
   async function fetchRawBytes(url, timeoutMs=7000){
@@ -1043,7 +1069,7 @@
     const btn = document.getElementById('refreshAllBtn');
     btn.disabled = true; btn.textContent = '새로고침 중...';
     const codes = [...new Set(holdings.map(h => h.code))];
-    await Promise.all(codes.map(code => ensurePortfolioQuote(code, true).catch(()=>null)));
+    await mapWithConcurrency(codes, 3, code => ensurePortfolioQuote(code, true));
     renderHoldings(); renderSummary(); renderTape();
     btn.disabled = false; btn.textContent = '전체 현재가 새로고침';
   });
@@ -1301,7 +1327,7 @@
       const kosdaq = kosdaqRes.status === 'fulfilled' ? kosdaqRes.value : [];
       // 전일비/등락률은 realtime 시세에서 가져와 캐시에 채워둠 (보유 종목과 같은 캐시 재사용)
       const allCodes = [...kospi, ...kosdaq].map(r => r.code);
-      await Promise.all(allCodes.map(code => ensurePortfolioQuote(code).catch(()=>null)));
+      await mapWithConcurrency(allCodes, 3, code => ensurePortfolioQuote(code));
       renderRankTable(kospiBody, kospi);
       renderRankTable(kosdaqBody, kosdaq);
       msgEl.innerHTML = (kospi.length===0 && kosdaq.length===0) ? `<div class="msg error">순위 데이터를 불러오지 못했습니다. 잠시 후 새로고침을 눌러 다시 시도해주세요.</div>` : '';
@@ -1445,7 +1471,7 @@
 
     if(holdings.length){
       const codes = [...new Set(holdings.map(h => h.code))];
-      await Promise.all(codes.map(code => ensurePortfolioQuote(code).catch(()=>null)));
+      await mapWithConcurrency(codes, 3, code => ensurePortfolioQuote(code));
       renderHoldings(); renderSummary(); renderTape();
     }
   })();
