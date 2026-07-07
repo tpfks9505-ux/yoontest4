@@ -6,6 +6,13 @@
       "name": "삼성전자",
       "qty": 1,
       "buyPrice": 11
+    },
+    {
+      "id": "mrb79ocp",
+      "code": "005930",
+      "name": "삼성전자",
+      "qty": 1,
+      "buyPrice": 33
     }
   ],
   "watchlist": {},
